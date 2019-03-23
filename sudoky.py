@@ -3,15 +3,16 @@ output1 = [["5","3","4","6","7","8","9","1","2"],["6","7","2","1","9","5","3","4
 input2 = [[".",".","9","7","4","8",".",".","."],["7",".",".",".",".",".",".",".","."],[".","2",".","1",".","9",".",".","."],[".",".","7",".",".",".","2","4","."],[".","6","4",".","1",".","5","9","."],[".","9","8",".",".",".","3",".","."],[".",".",".","8",".","3",".","2","."],[".",".",".",".",".",".",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 output2 = [["5","1","9","7","4","8","6","3","2"],["7","8","3","6","5","2","4","1","9"],["4","2","6","1","3","9","8","7","5"],["3","5","7","9","8","6","2","4","1"],["2","6","4","3","1","7","5","9","8"],["1","9","8","5","2","4","3","6","7"],["9","7","5","8","6","3","1","2","4"],["8","3","2","4","9","1","7","5","6"],["6","4","1","2","7","5","9","8","3"]]
 
-import itertools
-
 class Solution:
     allOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     def __init__(self):
         self.toSolve = 9 * 9
-        self.options = [[[]] * 9] * 9
-        #^ above is wrong, the * screwes things up
+        self.options = []
+        for r in range(9):
+            self.options.append([])
+            for c in range(9):
+                self.options[r].append([])
 
     def solveSudoku(self, board):
         self.initializeSudoku(board)
@@ -20,11 +21,11 @@ class Solution:
             iteration += 1
             if self.easyCheck(board):
                 continue
-            # if self.intermediateCheck(board):
-            #     continue
+            if self.intermediateCheck(board):
+                continue
             # self.complexCheck(board)
             print (iteration)
-            if iteration >= 10:
+            if iteration >= 20:
                 break
 
     def removeOptions(self, toRemove, optionsList):
@@ -61,13 +62,48 @@ class Solution:
 
     def pointingPair(self, board):
         found = False
+        for i in range(9):
+            rowOptions = self.getRow(i, self.options)
+            colOptions = self.getCol(i, self.options)
+            sqrIndex = int(i / 3) * 3
+            for index in range(9):
+                if rowOptions[index] != '.':
+                    for option in rowOptions[index]:    
+                        rowOptionsOutsideOfSquare = [o for i,o in enumerate(rowOptions) if i not in list(range(sqrIndex, sqrIndex + 3))]
+                        if option not in [item for sublist in rowOptionsOutsideOfSquare for item in sublist]:
+                            sqrOptions = self.getSqr(i, index, self.options)
+                            sqrOptionsOutsideOfInnerRow = [o for i,o in enumerate(sqrOptions) if i not in list(range(sqrIndex, sqrIndex + 3))]
+                            self.removeOptions([option], [rowOptionsOutsideOfSquare, sqrOptionsOutsideOfInnerRow])
+                            found = True
+                if colOptions[index] != '.':
+                    for option in colOptions[index]:    
+                        colOptionsOutsideOfSquare = [o for i,o in enumerate(colOptions) if i not in list(range(sqrIndex, sqrIndex + 3))] 
+                        if option not in [item for sublist in colOptionsOutsideOfSquare for item in sublist]:
+                            sqrOptions = self.getSqr(index, i, self.options)
+                            sqrOptionsOutsideOfInnerCol = [o for i,o in enumerate(sqrOptions) if i not in [index, (index + 3) % 9, (index + 6) % 9]]
+                            self.removeOptions([option], [colOptionsOutsideOfSquare, sqrOptionsOutsideOfInnerCol])
+                            found = True
         return found
+    
+    def nakedPair(self, board):
+        for r in range(9):
+            for c in range(9):
+                #TODO
+        return False
+
+    def hiddenPair(self, board):
+        #TODO
+        return False
+    
+    def pointingTriple(self, board):
+        #TODO
+        return False
 
     def easyCheck(self, board):
         return self.nakedSingle(board) or self.hiddenSingle(board) or self.pointingPair(board)
 
-    # def intermediateCheck(self, board): # TODO
-    #     return self.nakedPair(board) or self.hiddenPair(board) or self.pointingTriple(board)
+    def intermediateCheck(self, board):
+        return self.nakedPair(board) or self.hiddenPair(board) or self.pointingTriple(board)
 
     # def complexCheck(self, board): # TODO
     #     return self.nakedTriple(board) or self.hiddenTriple(board) # Could add Quads and Quints
@@ -101,16 +137,22 @@ class Solution:
 
 #--------------------------------------------------------------------------------------------------------------------------------------
 solution = Solution()
-solution.solveSudoku(input1)
-print('RESULTS 1 -----------------------------------', input1==output1)
-for r in input1:
-    print(r)
-for r in solution.options:
-    print(r)
-if input1==output1:
+test = 2
+
+if test == 1:
+    solution.solveSudoku(input1)
+    print('RESULTS 1 -----------------------------------', input1==output1)
+    for r in input1:
+        print(r)
+    for r in solution.options:
+        print(r)
+
+if test == 2:
     solution.solveSudoku(input2)
     print('RESULTS 2 -----------------------------------', input2==output2)
     for r in input2:
+        print(r)
+    for r in solution.options:
         print(r)
 
 # def getSudokuCol(self, colIndex, board):
