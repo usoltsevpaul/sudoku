@@ -5,7 +5,7 @@ output2 = [["5","1","9","7","4","8","6","3","2"],["7","8","3","6","5","2","4","1
 
 class Solution:
     def solveSudoku(self, board):
-        print()
+        print() 
 
 solution = Solution()
 solution.solveSudoku(input1)
