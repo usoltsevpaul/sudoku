@@ -29,19 +29,24 @@ class Solution:
                 break
 
     def removeOptions(self, toRemove, optionsList):
+        removed = 0
         for remove in toRemove:
             for item in optionsList:
                 for spot in item:
                     if spot.count(remove) > 0:
                         spot.remove(remove)
+                        removed += 1
+        return removed
 
     def nakedSingle(self, board):
         for r in range(9):
             for c in range(9):
                 if self.options[r][c] != '.' and len(self.options[r][c]) == 1:
                     board[r][c] = self.options[r][c][0]
+                    self.toSolve -= 1
                     self.removeOptions(self.options[r][c], [self.getRow(r, self.options), self.getCol(c, self.options), self.getSqr(r, c, self.options)])
                     self.options[r][c] = '.'
+                    print('naked single', (r, c))
                     return True
         return False
 
@@ -52,11 +57,16 @@ class Solution:
                     rowOptions = self.getRow(r, self.options)
                     colOptions = self.getCol(c, self.options)
                     sqrOptions = self.getSqr(r, c, self.options)
+                    flatRowOptions = [item for sublist in rowOptions for item in sublist]
+                    flatColOptions = [item for sublist in colOptions for item in sublist]
+                    flatSqrOptions = [item for sublist in sqrOptions for item in sublist]
                     for option in self.options[r][c]:
-                        if rowOptions.count(option) == 1 or colOptions.count(option) == 1 or sqrOptions.count(option) == 1:
+                        if option != '.' and (flatRowOptions.count(option) == 1 or flatColOptions.count(option) == 1 or flatSqrOptions.count(option) == 1):
                             board[r][c] = option
+                            self.toSolve -= 1
                             self.removeOptions([option], [rowOptions, colOptions, sqrOptions])
                             self.options[r][c] = '.'
+                            print('hidden single', (r, c))
                             return True
         return False
 
@@ -86,13 +96,78 @@ class Solution:
         return found
     
     def nakedPair(self, board):
-        for r in range(9):
-            for c in range(9):
-                #TODO
-        return False
+        found = False
+        for i in range(9):
+            rowOptions = self.getRow(i, self.options)
+            colOptions = self.getCol(i, self.options)
+            for index in range(9):
+                if rowOptions[index] != '.' and rowOptions.count(rowOptions[index] == 2):
+                    index2 = rowOptions.index(rowOptions[index], 1)
+                    sqrOptions1 = self.getSqr(i, index, self.options)
+                    sqrOptionsExcludingRow1 = [o for i,o in enumerate(sqrOptions1) if i not in [index, (index + 3) % 9, (index + 6) % 9]]
+                    sqrOptionsExcludingRow2 = []
+                    if int(index / 3) != int(index2 / 3):
+                        sqrOptions2 = self.getSqr(i, index2, self.options)
+                        sqrOptionsExcludingRow2 = [o for i,o in enumerate(sqrOptions2) if i not in [index2, (index2 + 3) % 9, (index2 + 6) % 9]]
+                    self.removeOptions(rowOptions[index], [sqrOptionsExcludingRow1, sqrOptionsExcludingRow2])
+                    found = True
+                if colOptions[index] != '.' and colOptions.count(colOptions[index] == 2):
+                    index2 = colOptions.index(colOptions[index], 1)
+                    sqrOptions1 = self.getSqr(index, i, self.options)
+                    sqrOptionsExcludingCol1 = [o for i,o in enumerate(sqrOptions1) if i not in [index, (index + 3) % 9, (index + 6) % 9]]
+                    sqrOptionsExcludingCol2 = []
+                    if int(index / 3) != int(index2 / 3):
+                        sqrOptions2 = self.getSqr(index2, i, self.options)
+                        sqrOptionsExcludingCol2 = [o for i,o in enumerate(sqrOptions2) if i not in [index2, (index2 + 3) % 9, (index2 + 6) % 9]]
+                    self.removeOptions(colOptions[index], [sqrOptionsExcludingCol1, sqrOptionsExcludingCol2])
+                    found = True
+        return found
 
     def hiddenPair(self, board):
-        #TODO
+        for i in range(9):
+            rowOptions = self.getRow(i, self.options)
+            colOptions = self.getCol(i, self.options)
+            flatRowOptions = [item for sublist in rowOptions for item in sublist]
+            flatColOptions = [item for sublist in colOptions for item in sublist]
+            for index in range(9):
+                if flatRowOptions.count(self.allOptions[index]) == 2:
+                    firstIndex, secondIndex = -1, -1
+                    for optionsIndex in range(9):
+                        if rowOptions[optionsIndex] != '.':
+                            for option in rowOptions[optionsIndex]:
+                                if option == self.allOptions[index]:
+                                    if firstIndex == -1:
+                                        firstIndex = optionsIndex
+                                    else:
+                                        secondIndex = optionsIndex
+                    if int(firstIndex / 3) == int(secondIndex / 3):
+                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(i, firstIndex, self.options)])
+                    else:
+                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(i, firstIndex, self.options), self.getSqr(i, secondIndex, self.options)])
+                    self.options[i][firstIndex].append(self.allOptions[index])
+                    self.options[i][secondIndex].append(self.allOptions[index])
+                    if removed > 2:
+                        print('hidden row pair')
+                        return True
+                if flatColOptions.count(self.allOptions[index]) == 2:
+                    firstIndex, secondIndex = -1, -1
+                    for optionsIndex in range(9):
+                        if colOptions[optionsIndex] != '.':
+                            for option in colOptions[optionsIndex]:
+                                if option == self.allOptions[index]:
+                                    if firstIndex == -1:
+                                        firstIndex = optionsIndex
+                                    else:
+                                        secondIndex = optionsIndex
+                    if int(firstIndex / 3) == int(secondIndex / 3):
+                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(firstIndex, i, self.options)])
+                    else:
+                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(firstIndex, i, self.options), self.getSqr(secondIndex, i, self.options)])
+                    self.options[firstIndex][i].append(self.allOptions[index])
+                    self.options[secondIndex][i].append(self.allOptions[index])
+                    if removed > 2:
+                        print('hidden col pair')
+                        return True
         return False
     
     def pointingTriple(self, board):
