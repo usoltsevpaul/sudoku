@@ -2,6 +2,8 @@ input1 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".","."
 output1 = [["5","3","4","6","7","8","9","1","2"],["6","7","2","1","9","5","3","4","8"],["1","9","8","3","4","2","5","6","7"],["8","5","9","7","6","1","4","2","3"],["4","2","6","8","5","3","7","9","1"],["7","1","3","9","2","4","8","5","6"],["9","6","1","5","3","7","2","8","4"],["2","8","7","4","1","9","6","3","5"],["3","4","5","2","8","6","1","7","9"]]
 input2 = [[".",".","9","7","4","8",".",".","."],["7",".",".",".",".",".",".",".","."],[".","2",".","1",".","9",".",".","."],[".",".","7",".",".",".","2","4","."],[".","6","4",".","1",".","5","9","."],[".","9","8",".",".",".","3",".","."],[".",".",".","8",".","3",".","2","."],[".",".",".",".",".",".",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 output2 = [["5","1","9","7","4","8","6","3","2"],["7","8","3","6","5","2","4","1","9"],["4","2","6","1","3","9","8","7","5"],["3","5","7","9","8","6","2","4","1"],["2","6","4","3","1","7","5","9","8"],["1","9","8","5","2","4","3","6","7"],["9","7","5","8","6","3","1","2","4"],["8","3","2","4","9","1","7","5","6"],["6","4","1","2","7","5","9","8","3"]]
+input3 = [[".",".",".","2",".",".",".","6","3"],["3",".",".",".",".","5","4",".","1"],[".",".","1",".",".","3","9","8","."],[".",".",".",".",".",".",".","9","."],[".",".",".","5","3","8",".",".","."],[".","3",".",".",".",".",".",".","."],[".","2","6","3",".",".","5",".","."],["5",".","3","7",".",".",".",".","8"],["4","7",".",".",".","1",".",".","."]]
+output3 = [["8","5","4","2","1","9","7","6","3"],["3","9","7","8","6","5","4","2","1"],["2","6","1","4","7","3","9","8","5"],["7","8","5","1","2","6","3","9","4"],["6","4","9","5","3","8","1","7","2"],["1","3","2","9","4","7","8","5","6"],["9","2","6","3","8","4","5","1","7"],["5","1","3","7","9","2","6","4","8"],["4","7","8","6","5","1","2","3","9"]]
 
 class Solution:
     allOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -71,30 +73,94 @@ class Solution:
         return False
 
     def pointingPair(self, board):
-        found = False
+        removed = 0
         for i in range(9):
             rowOptions = self.getRow(i, self.options)
             colOptions = self.getCol(i, self.options)
-            sqrIndex = int(i / 3) * 3
-            for index in range(9):
-                if rowOptions[index] != '.':
-                    for option in rowOptions[index]:    
-                        rowOptionsOutsideOfSquare = [o for i,o in enumerate(rowOptions) if i not in list(range(sqrIndex, sqrIndex + 3))]
-                        if option not in [item for sublist in rowOptionsOutsideOfSquare for item in sublist]:
-                            sqrOptions = self.getSqr(i, index, self.options)
-                            sqrOptionsOutsideOfInnerRow = [o for i,o in enumerate(sqrOptions) if i not in list(range(sqrIndex, sqrIndex + 3))]
-                            self.removeOptions([option], [rowOptionsOutsideOfSquare, sqrOptionsOutsideOfInnerRow])
-                            found = True
-                if colOptions[index] != '.':
-                    for option in colOptions[index]:    
-                        colOptionsOutsideOfSquare = [o for i,o in enumerate(colOptions) if i not in list(range(sqrIndex, sqrIndex + 3))] 
-                        if option not in [item for sublist in colOptionsOutsideOfSquare for item in sublist]:
-                            sqrOptions = self.getSqr(index, i, self.options)
-                            sqrOptionsOutsideOfInnerCol = [o for i,o in enumerate(sqrOptions) if i not in [index, (index + 3) % 9, (index + 6) % 9]]
-                            self.removeOptions([option], [colOptionsOutsideOfSquare, sqrOptionsOutsideOfInnerCol])
-                            found = True
-        return found
+            valid, index1, index2, value, sqr = self.checkForPointingBar(i, -1, rowOptions)
+            if valid:
+                for index in range(9):
+                    if int(index / 3) != i % 3:
+                        if sqr[index].count(value) > 0:
+                            sqr[index].remove(value)
+                            removed += 1
+                if removed > 0:
+                    print('pointing pair row')
+                    return True
+            valid, index1, index2, value, sqr = self.checkForPointingBar(-1, i, colOptions)
+            if valid:
+                for index in range(9):
+                    if index % 3 != i % 3:
+                        if sqr[index].count(value) > 0:
+                            sqr[index].remove(value)
+                            removed += 1
+                if removed > 0:
+                    print('pointing pair col')
+                    return True
+        return False
     
+    def checkForPointingBar(self, row, col, optionList):
+        if col == -1:
+            sqr1, sqr2, sqr3 = self.getSqr(row, 0, self.options), self.getSqr(row, 3, self.options), self.getSqr(row, 6, self.options)
+            flatSqr1, flatSqr2, flatSqr3 = [item for sublist in sqr1 for item in sublist], [item for sublist in sqr2 for item in sublist], [item for sublist in sqr3 for item in sublist]
+            flatRowInSqr1, flatRowInSqr2, flatRowInSqr3 = [item for sublist in optionList[0:3] for item in sublist], [item for sublist in optionList[3:6] for item in sublist], [item for sublist in optionList[6:9] for item in sublist]
+            for option in self.allOptions:
+                if flatSqr1.count(option) == 2 and flatRowInSqr1.count(option) == 2:
+                    index = -1
+                    for i in range(0, 3):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr1
+                if flatSqr2.count(option) == 2 and flatRowInSqr2.count(option) == 2:
+                    index = -1
+                    for i in range(3, 6):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr2
+                if flatSqr3.count(option) == 2 and flatRowInSqr3.count(option) == 2:
+                    index = -1
+                    for i in range(6, 9):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr3
+        if row == -1:
+            sqr1, sqr2, sqr3 = self.getSqr(0, col, self.options), self.getSqr(3, col, self.options), self.getSqr(6, col, self.options)
+            flatSqr1, flatSqr2, flatSqr3 = [item for sublist in sqr1 for item in sublist], [item for sublist in sqr2 for item in sublist], [item for sublist in sqr3 for item in sublist]
+            flatColInSqr1, flatColInSqr2, flatColInSqr3 = [item for sublist in optionList[0:3] for item in sublist], [item for sublist in optionList[3:6] for item in sublist], [item for sublist in optionList[6:9] for item in sublist]
+            for option in self.allOptions:
+                if flatSqr1.count(option) == 2 and flatColInSqr1.count(option) == 2:
+                    index = -1
+                    for i in range(0, 3):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr1
+                if flatSqr2.count(option) == 2 and flatColInSqr2.count(option) == 2:
+                    index = -1
+                    for i in range(3, 6):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr2
+                if flatSqr3.count(option) == 2 and flatColInSqr3.count(option) == 2:
+                    index = -1
+                    for i in range(6, 9):
+                        if optionList[i].count(option) > 0:
+                            if index == -1:
+                                index = i
+                            else:
+                                return True, index, i, option, sqr3
+        # TODO SQUARE CHECK
+        return False, -1, -1, '.', ''
+
     def nakedPair(self, board):
         found = False
         for i in range(9):
@@ -127,58 +193,120 @@ class Solution:
         for i in range(9):
             rowOptions = self.getRow(i, self.options)
             colOptions = self.getCol(i, self.options)
-            flatRowOptions = [item for sublist in rowOptions for item in sublist]
-            flatColOptions = [item for sublist in colOptions for item in sublist]
-            for index in range(9):
-                if flatRowOptions.count(self.allOptions[index]) == 2:
-                    firstIndex, secondIndex = -1, -1
-                    for optionsIndex in range(9):
-                        if rowOptions[optionsIndex] != '.':
-                            for option in rowOptions[optionsIndex]:
-                                if option == self.allOptions[index]:
-                                    if firstIndex == -1:
-                                        firstIndex = optionsIndex
-                                    else:
-                                        secondIndex = optionsIndex
-                    if int(firstIndex / 3) == int(secondIndex / 3):
-                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(i, firstIndex, self.options)])
-                    else:
-                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(i, firstIndex, self.options), self.getSqr(i, secondIndex, self.options)])
-                    self.options[i][firstIndex].append(self.allOptions[index])
-                    self.options[i][secondIndex].append(self.allOptions[index])
-                    if removed > 2:
-                        print('hidden row pair')
-                        return True
-                if flatColOptions.count(self.allOptions[index]) == 2:
-                    firstIndex, secondIndex = -1, -1
-                    for optionsIndex in range(9):
-                        if colOptions[optionsIndex] != '.':
-                            for option in colOptions[optionsIndex]:
-                                if option == self.allOptions[index]:
-                                    if firstIndex == -1:
-                                        firstIndex = optionsIndex
-                                    else:
-                                        secondIndex = optionsIndex
-                    if int(firstIndex / 3) == int(secondIndex / 3):
-                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(firstIndex, i, self.options)])
-                    else:
-                        removed = self.removeOptions([self.allOptions[index]], [self.getSqr(firstIndex, i, self.options), self.getSqr(secondIndex, i, self.options)])
-                    self.options[firstIndex][i].append(self.allOptions[index])
-                    self.options[secondIndex][i].append(self.allOptions[index])
-                    if removed > 2:
-                        print('hidden col pair')
-                        return True
+            foundPairInRow, pairIndex1, pairIndex2, value1, value2 = self.checkForHiddenPair(rowOptions)
+            if foundPairInRow:
+                while len(rowOptions[pairIndex1]) > 0:
+                    rowOptions[pairIndex1].pop()
+                while len(rowOptions[pairIndex2]) > 0:
+                    rowOptions[pairIndex2].pop()
+                rowOptions[pairIndex1].append(value1)
+                rowOptions[pairIndex1].append(value2)
+                rowOptions[pairIndex2].append(value1)
+                rowOptions[pairIndex2].append(value2)
+                print('hidden row pair')
+                return True 
+            foundPairInCol, pairIndex1, pairIndex2, value1, value2 = self.checkForHiddenPair(colOptions)
+            if foundPairInCol:
+                while len(colOptions[pairIndex1]) > 0:
+                    colOptions[pairIndex1].pop()
+                while len(colOptions[pairIndex2]) > 0:
+                    colOptions[pairIndex2].pop()
+                colOptions[pairIndex1].append(value1)
+                colOptions[pairIndex1].append(value2)
+                colOptions[pairIndex2].append(value1)
+                colOptions[pairIndex2].append(value2)
+                print('hidden col pair')
+                return True  
+        for r in range(0, 9, 3):
+            for c in range(0, 9, 3):
+                sqrOptions = self.getSqr(r, c, self.options)
+                foundPairInSquare, pairIndex1, pairIndex2, value1, value2 = self.checkForHiddenPair(sqrOptions)
+                if foundPairInSquare:
+                    while len(sqrOptions[pairIndex1]) > 0:
+                        sqrOptions[pairIndex1].pop()
+                    while len(sqrOptions[pairIndex2]) > 0:
+                        sqrOptions[pairIndex2].pop()
+                    sqrOptions[pairIndex1].append(value1)
+                    sqrOptions[pairIndex1].append(value2)
+                    sqrOptions[pairIndex2].append(value1)
+                    sqrOptions[pairIndex2].append(value2)
+                    print('hidden sqr pair')
+                    return True   
         return False
     
-    def pointingTriple(self, board):
-        #TODO
+    def checkForHiddenPair(self, optionList):
+        flatOptions = [item for sublist in optionList for item in sublist]
+        allOptionsOccurrence = []
+        for option in self.allOptions:
+            allOptionsOccurrence.append(flatOptions.count(option))
+        for index1 in range(9):
+            if allOptionsOccurrence[index1] == 2:
+                option1 = self.allOptions[index1]
+                for index2 in range(index1 + 1, 9):
+                    if allOptionsOccurrence[index2] == 2:
+                        option2 = self.allOptions[index2]
+                        index1InList, index2InList = -1, -1
+                        for i in range(9):
+                            if optionList[i].count(option1) > 0 and optionList[i].count(option2) > 0:
+                                if index1InList == -1:
+                                    index1InList = i
+                                elif len(optionList[i]) > 2 or len(optionList[index1InList]) > 2:
+                                    index2InList = i
+                        if index1InList != -1 and index2InList != -1:
+                            return True, index1InList, index2InList, option1, option2
+        return False, -1, -1, -1, -1
+
+    def swordFish(self, board):
+        for r1 in range(9):
+            rowOptions1 = self.getRow(r1, self.options)
+            flatRow1 = [item for sublist in rowOptions1 for item in sublist]
+            for option in self.allOptions:
+                if flatRow1.count(option) == 3:
+                    index1 = self.getSwordFishIndex(option, rowOptions1)
+                    for r2 in range(9):
+                        if r2 != r1:
+                            rowOptions2 = self.getRow(r2, self.options)
+                            flatRow2 = [item for sublist in rowOptions2 for item in sublist]
+                            if flatRow2.count(option) >= 2 and flatRow2.count(option) <= 3: # not sure if its 2-3 or 1-3 for valid swordfish
+                                index2 = self.getSwordFishIndex(option, rowOptions2, index1)
+                                if index1 == index2:
+                                    for r3 in range(9):
+                                        if r3 != r1 and r3 != r2:
+                                            rowOptions3 = self.getRow(r3, self.options)
+                                            flatRow3 = [item for sublist in rowOptions3 for item in sublist]
+                                            if flatRow3.count(option) >= 2 and flatRow3.count(option) <= 3: # not sure if its 2-3 or 1-3 for valid swordfish
+                                                index3 = self.getSwordFishIndex(option, rowOptions3, index2)
+                                                if index1 == index3:
+                                                    col1, col2, col3 = self.getCol(index1[0], self.options), self.getCol(index1[1], self.options), self.getCol(index1[2], self.options)
+                                                    removed = 0
+                                                    for row in range(9):
+                                                        if row not in [r1, r2, r3]:
+                                                            if col1[row].count(option) > 0:
+                                                                col1[row].remove(option)
+                                                                removed += 1
+                                                            if col2[row].count(option) > 0:
+                                                                col2[row].remove(option)
+                                                                removed += 1
+                                                            if col3[row].count(option) > 0:
+                                                                col3[row].remove(option)
+                                                                removed +=1
+                                                    if removed > 0:
+                                                        print('sword fish')
+                                                        return True
         return False
 
+    def getSwordFishIndex(self, option, optionList, priorIndex=[]):
+        indexList = []
+        for index in range(9):
+            if optionList[index].count(option) > 0 or (index in priorIndex and optionList[index] == '.'):
+                indexList.append(index)
+        return indexList                   
+
     def easyCheck(self, board):
-        return self.nakedSingle(board) or self.hiddenSingle(board) or self.pointingPair(board)
+        return self.nakedSingle(board) or self.hiddenSingle(board)
 
     def intermediateCheck(self, board):
-        return self.nakedPair(board) or self.hiddenPair(board) or self.pointingTriple(board)
+        return self.nakedPair(board) or self.hiddenPair(board) or self.swordFish(board) or self.pointingPair(board) # self.pointingTriple(board)
 
     # def complexCheck(self, board): # TODO
     #     return self.nakedTriple(board) or self.hiddenTriple(board) # Could add Quads and Quints
@@ -212,13 +340,14 @@ class Solution:
 
 #--------------------------------------------------------------------------------------------------------------------------------------
 solution = Solution()
-test = 2
+test = 3
 
 if test == 1:
     solution.solveSudoku(input1)
     print('RESULTS 1 -----------------------------------', input1==output1)
     for r in input1:
         print(r)
+    print()
     for r in solution.options:
         print(r)
 
@@ -227,75 +356,15 @@ if test == 2:
     print('RESULTS 2 -----------------------------------', input2==output2)
     for r in input2:
         print(r)
+    print()
     for r in solution.options:
         print(r)
 
-# def getSudokuCol(self, colIndex, board):
-#     lst = []
-#     for r in range(9):
-#         if board[r][colIndex] != '.':
-#             lst.append(board[r][colIndex])
-#     return lst
-        
-# def getSudokuRow(self, rowIndex, board):
-#     lst = []
-#     for c in range(9):
-#         if board[rowIndex][c] != '.':
-#             lst.append(board[rowIndex][c])
-#     return lst
-    
-# def getSudokuSqr(self, rowIndex, colIndex, board):
-#     lst = []
-#     rowStart, colStart = int(rowIndex/3)*3, int(colIndex/3)*3
-#     for r in range(rowStart, rowStart+3):
-#         for c in range(colStart, colStart+3):
-#             if board[r][c] != '.':
-#                 lst.append(board[r][c])
-#     return lst
-
-# def getSudokuOtherRows(self, rowIndex, board):
-#     lst = []
-#     rowStart = int(rowIndex/3)*3
-#     for r in range(rowStart, rowStart+3):
-#         if r != rowIndex:
-#             lst.append(self.getSudokuRow(r, board))
-#     return lst
-
-# def getSudokuOtherCols(self, colIndex, board):
-#     lst = []
-#     colStart = int(colIndex/3)*3
-#     for c in range(colStart, colStart+3):
-#         if c != colIndex:
-#             lst.append(self.getSudokuCol(c, board))
-#     return lst
-
-# def solveSudoku(self, board):
-#     empties = 1
-#     iteration = 0
-#     while empties > 0 and iteration != 20:
-#         empties = 0
-#         for r in range(9):
-#             for c in range(9):
-#                 if board[r][c] == '.':
-#                     rows = self.getSudokuRow(r, board)
-#                     cols = self.getSudokuCol(c, board)
-#                     sqr = self.getSudokuSqr(r, c, board)
-#                     allOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-#                     options = [value for value in allOptions if value not in rows and value not in cols and value not in sqr]
-#                     if iteration == 49:
-#                         print (options)
-#                     if len(options) == 1:
-#                         board[r][c] = options[0]
-#                     else:
-#                         found = False
-#                         for option in options:
-#                             otherRows = self.getSudokuOtherRows(r, board)
-#                             otherCols = self.getSudokuOtherCols(c, board)
-                            
-#                             if option in otherRows[0] and option in otherRows[1] and option in otherCols[0] and option in otherCols[1]:
-#                                 found = True
-#                                 board[r][c] = option
-#                                 break
-#                         if not found:
-#                             empties += 1
-#         iteration += 1
+if test == 3:
+    solution.solveSudoku(input3)
+    print('RESULTS 3 -----------------------------------', input3==output3)
+    for r in input3:
+        print(r)
+    print()
+    for r in solution.options:
+        print(r)
