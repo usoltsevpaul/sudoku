@@ -6,21 +6,25 @@ class Solution:
         self.solve()
 
     def solve(self):
-        # Base case?
-
-        # Find key with smallest number of possibilities
-
-        # For each possiblity:
-            # store it temp
-            # use it
-            # call solve() again recursively
-            # if its good, return True ... done
-            # otherwise undo
-
+        minIndex, key = 10, (-1, -1)
+        for k in self.options:
+            if len(self.options[k]) > 0 and len(self.options[k]) < minIndex and self.board[k[0]][k[1]] == '.':
+                key, minIndex = k, len(self.options[k])
+        if key == (-1, -1):
+            return True
+        for option in self.options[key]:
+            if self.isValidOption(key, option):
+                self.board[key[0]][key[1]] = option
+                if self.solve():
+                    return True
+                self.board[key[0]][key[1]] = '.'
         return False
 
-    def undo(self):
-        pass
+    def isValidOption(self, key, option):
+        rowItems = self.board[key[0]]
+        colItems = [row[key[1]] for row in self.board]
+        sqrItems = self.getSqr(key[0], key[1], self.board)
+        return option not in rowItems and option not in colItems and option not in sqrItems
 
     def initialize(self):
         for row in range(9):
@@ -29,8 +33,7 @@ class Solution:
                 colItems = [row[col] for row in self.board]
                 sqrItems = self.getSqr(row, col, self.board)
                 self.options[(row, col)] = []
-                if self.board[row][col] != '.':
-                    self.options[(row, col)] = []
+                if self.board[row][col] == '.':
                     possible = ['1','2','3','4','5','6','7','8','9']
                     for option in possible:
                         if (option not in rowItems and option not in colItems and option not in sqrItems):
@@ -56,39 +59,38 @@ input4 = [[".",".",".",".",".","7",".",".","9"],[".","4",".",".","8","1","2","."
 output4 = [["3","1","2","5","4","7","8","6","9"],["9","4","7","6","8","1","2","3","5"],["6","5","8","9","3","2","7","1","4"],["1","8","5","3","6","4","9","7","2"],["2","9","3","7","1","8","4","5","6"],["4","7","6","2","9","5","3","8","1"],["8","6","4","1","2","3","5","9","7"],["7","2","9","8","5","6","1","4","3"],["5","3","1","4","7","9","6","2","8"]]
 solution = Solution()
 test = 4
+import timeit
+
+def toTime():
+    if test == 1:
+        return solution.solveSudoku(input1)
+    if test == 2:
+        return solution.solveSudoku(input2)
+    if test == 3:
+        return solution.solveSudoku(input3)
+    if test == 4:
+        return solution.solveSudoku(input4)
 
 if test == 1:
-    solution.solveSudoku(input1)
+    print(timeit.timeit(toTime, number=1))
     print('RESULTS 1 -----------------------------------', input1==output1)
     for r in input1:
         print(r)
-    print()
-    for r in solution.options:
-        print(r)
 
 if test == 2:
-    solution.solveSudoku(input2)
+    print(timeit.timeit(toTime, number=1))
     print('RESULTS 2 -----------------------------------', input2==output2)
     for r in input2:
         print(r)
-    print()
-    for r in solution.options:
-        print(r)
 
 if test == 3:
-    solution.solveSudoku(input3)
+    print(timeit.timeit(toTime, number=1))
     print('RESULTS 3 -----------------------------------', input3==output3)
     for r in input3:
         print(r)
-    print()
-    for r in solution.options:
-        print(r)
 
 if test == 4:
-    solution.solveSudoku(input4)
+    print(timeit.timeit(toTime, number=1))
     print('RESULTS 4 -----------------------------------', input4==output4)
     for r in input4:
-        print(r)
-    print()
-    for r in solution.options:
         print(r)
