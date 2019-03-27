@@ -4,6 +4,8 @@ input2 = [[".",".","9","7","4","8",".",".","."],["7",".",".",".",".",".",".","."
 output2 = [["5","1","9","7","4","8","6","3","2"],["7","8","3","6","5","2","4","1","9"],["4","2","6","1","3","9","8","7","5"],["3","5","7","9","8","6","2","4","1"],["2","6","4","3","1","7","5","9","8"],["1","9","8","5","2","4","3","6","7"],["9","7","5","8","6","3","1","2","4"],["8","3","2","4","9","1","7","5","6"],["6","4","1","2","7","5","9","8","3"]]
 input3 = [[".",".",".","2",".",".",".","6","3"],["3",".",".",".",".","5","4",".","1"],[".",".","1",".",".","3","9","8","."],[".",".",".",".",".",".",".","9","."],[".",".",".","5","3","8",".",".","."],[".","3",".",".",".",".",".",".","."],[".","2","6","3",".",".","5",".","."],["5",".","3","7",".",".",".",".","8"],["4","7",".",".",".","1",".",".","."]]
 output3 = [["8","5","4","2","1","9","7","6","3"],["3","9","7","8","6","5","4","2","1"],["2","6","1","4","7","3","9","8","5"],["7","8","5","1","2","6","3","9","4"],["6","4","9","5","3","8","1","7","2"],["1","3","2","9","4","7","8","5","6"],["9","2","6","3","8","4","5","1","7"],["5","1","3","7","9","2","6","4","8"],["4","7","8","6","5","1","2","3","9"]]
+input4 = [[".",".",".",".",".","7",".",".","9"],[".","4",".",".","8","1","2",".","."],[".",".",".","9",".",".",".","1","."],[".",".","5","3",".",".",".","7","2"],["2","9","3",".",".",".",".","5","."],[".",".",".",".",".","5","3",".","."],["8",".",".",".","2","3",".",".","."],["7",".",".",".","5",".",".","4","."],["5","3","1",".","7",".",".",".","."]]
+output4 = [["3","1","2","5","4","7","8","6","9"],["9","4","7","6","8","1","2","3","5"],["6","5","8","9","3","2","7","1","4"],["1","8","5","3","6","4","9","7","2"],["2","9","3","7","1","8","4","5","6"],["4","7","6","2","9","5","3","8","1"],["8","6","4","1","2","3","5","9","7"],["7","2","9","8","5","6","1","4","3"],["5","3","1","4","7","9","6","2","8"]]
 
 class Solution:
     allOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -18,17 +20,14 @@ class Solution:
 
     def solveSudoku(self, board):
         self.initializeSudoku(board)
-        iteration = 0
         while self.toSolve > 0:
-            iteration += 1
             if self.easyCheck(board):
                 continue
             if self.intermediateCheck(board):
                 continue
-            # self.complexCheck(board)
-            print (iteration)
-            if iteration >= 20:
-                break
+            if self.complexCheck(board):
+                continue
+            break
 
     def removeOptions(self, toRemove, optionsList):
         removed = 0
@@ -84,6 +83,9 @@ class Solution:
                         if sqr[index].count(value) > 0:
                             sqr[index].remove(value)
                             removed += 1
+                        if index != index1 and index != index2 and rowOptions[index].count(value) > 0:
+                            rowOptions[index].remove(value)
+                            removed += 1
                 if removed > 0:
                     print('pointing pair row')
                     return True
@@ -94,9 +96,18 @@ class Solution:
                         if sqr[index].count(value) > 0:
                             sqr[index].remove(value)
                             removed += 1
+                        if index != index1 and index != index2 and colOptions[index].count(value) > 0:
+                            colOptions[index].remove(value)
+                            removed += 1
                 if removed > 0:
                     print('pointing pair col')
                     return True
+        for r in range(0, 9, 3):
+            for c in range(0, 9, 3):
+                sqrOptions = self.getSqr(r, c, self.options)
+                valid, index1, index2, value, sqr = self.checkForPointingBar(r, c, sqrOptions)
+                if valid:
+                    print()
         return False
     
     def checkForPointingBar(self, row, col, optionList):
@@ -158,7 +169,31 @@ class Solution:
                                 index = i
                             else:
                                 return True, index, i, option, sqr3
-        # TODO SQUARE CHECK
+        elif row != -1 and col != -1:
+            flatSquare = [item for sublist in optionList for item in sublist]
+            for option in self.allOptions:
+                if flatSquare.count(option) > 2:
+                    for index1 in range(9):
+                        if optionList[index1].count(option) > 0:
+                            for index2 in range(index1 + 1, 9):
+                                if optionList[index2].count(option) > 0:
+                                    contains = 0
+                                    if int(index1 / 3) == int(index2 / 3): #row
+                                        toCheck = self.getRow(int(index1 / 3) + row, self.options)
+                                        for i in range(9):
+                                            if i not in [col, col + 1, col + 2]:
+                                                if toCheck[i].count(option) > 0:
+                                                    contains += 1
+                                        if contains == 0:
+                                            return True, index1, index2, option, optionList
+                                    if index1 % 3 == index2 % 3: #col
+                                        toCheck = self.getCol((index1 % 3) + col, self.options)
+                                        for i in range(9):
+                                            if i not in [row, row + 1, row + 2]:
+                                                if toCheck[i].count(option) > 0:
+                                                    contains += 1
+                                        if contains == 0:
+                                            return True, index1, index2, option, optionList
         return False, -1, -1, '.', ''
 
     def nakedPair(self, board):
@@ -300,16 +335,37 @@ class Solution:
         for index in range(9):
             if optionList[index].count(option) > 0 or (index in priorIndex and optionList[index] == '.'):
                 indexList.append(index)
-        return indexList                   
+        return indexList
+
+    def xyzWing(self, board):
+        for r in range(0, 9, 3):
+            for c in range(0, 9, 3):
+                sqrOptions = self.getSqr(r, c, self.options)
+                optionsSize = []
+                for option in sqrOptions:
+                    optionsSize.append(len(option))
+                for i in range(9):
+                    if optionsSize[i] == 3:
+                        for j in range(9):
+                            if j != i and optionsSize[j] == 2:
+                                if sqrOptions[j][0] in sqrOptions[i] and sqrOptions[j][1] in sqrOptions[i]:
+                                    rowOptions = self.getRow(int(i / 3) + r, self.options)
+                                    colOptions = self.getCol((i % 3) + c, self.options)
+                                    for k in range(9):
+                                        if k not in [c, c + 1, c + 2]:
+                                            if len(rowOptions[k]) == 2:
+                                                if rowOptions[k][0] in sqrOptions[i] and rowOptions[k][1] in sqrOptions[i] and (rowOptions[k][0] not in sqrOptions[j] or rowOptions[k][1] not in sqrOptions[j]):
+                                                    return False # todo 
+        return False
 
     def easyCheck(self, board):
         return self.nakedSingle(board) or self.hiddenSingle(board)
 
     def intermediateCheck(self, board):
-        return self.nakedPair(board) or self.hiddenPair(board) or self.swordFish(board) or self.pointingPair(board) # self.pointingTriple(board)
+        return self.nakedPair(board) or self.hiddenPair(board) or self.swordFish(board) or self.pointingPair(board)
 
-    # def complexCheck(self, board): # TODO
-    #     return self.nakedTriple(board) or self.hiddenTriple(board) # Could add Quads and Quints
+    def complexCheck(self, board):
+        return self.xyzWing(board)
 
     def initializeSudoku(self, board):
         for r in range(9):
@@ -340,7 +396,7 @@ class Solution:
 
 #--------------------------------------------------------------------------------------------------------------------------------------
 solution = Solution()
-test = 3
+test = 4
 
 if test == 1:
     solution.solveSudoku(input1)
@@ -364,6 +420,15 @@ if test == 3:
     solution.solveSudoku(input3)
     print('RESULTS 3 -----------------------------------', input3==output3)
     for r in input3:
+        print(r)
+    print()
+    for r in solution.options:
+        print(r)
+
+if test == 4:
+    solution.solveSudoku(input4)
+    print('RESULTS 4 -----------------------------------', input4==output4)
+    for r in input4:
         print(r)
     print()
     for r in solution.options:
